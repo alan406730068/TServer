@@ -1,8 +1,9 @@
 ﻿using LiteNetLib;
-using System.Net;
-using System.Net.Sockets;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 
 namespace TServer
@@ -15,6 +16,7 @@ namespace TServer
         #region public methods
         public void Start()
         {
+            connectionsDic = new Dictionary<int, NetPeer>();
             _netManager = new NetManager(this)
             {
                 DisconnectTimeout = 100000
@@ -38,6 +40,9 @@ namespace TServer
         {
             var data = Encoding.UTF8.GetString(reader.RawData);
             Console.WriteLine($"Received data from {peer.Address}:{peer.Port}: {data}");
+
+            var response = $"Echo: {data}";
+            peer.Send(Encoding.UTF8.GetBytes(response), DeliveryMethod.ReliableOrdered);
         }
 
         public void OnPeerConnected(NetPeer peer)
@@ -51,12 +56,17 @@ namespace TServer
             Console.WriteLine($"Client Peer disConnected:{peer.Address}:{peer.Port} Id:{peer.Id}");
             connectionsDic.Remove(peer.Id);
         }
+        public void OnNetworkLatencyUpdate(NetPeer peer, int latency)
+        {
+            Console.WriteLine($"延遲: {latency}ms");
+
+            if (latency > 200)
+            {
+                Console.WriteLine("網路延遲過高！");
+            }
+        }
 
         public void OnNetworkError(IPEndPoint endPoint, SocketError socketError)
-        {
-            throw new NotImplementedException();
-        }
-        public void OnNetworkLatencyUpdate(NetPeer peer, int latency)
         {
             throw new NotImplementedException();
         }
